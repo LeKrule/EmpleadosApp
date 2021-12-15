@@ -14,12 +14,13 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+Route::put('login', [UsersController::class, 'login']);
+Route::get('registrar-auto', [UsersController::class, 'registrarauto']);
 
-Route::middleware('Checkear_Usuario')->group(function (){
+Route::middleware('auth-api')->group(function (){
     Route::prefix('users')->group(function(){
-        Route::get('login', [UsersController::class, 'login']);
-        Route::get('registrar', [UsersController::class, 'registrar'])->withoutMiddleware("Checkear_Usuario");
-        Route::get('Olvidar-pass', [UsersController::class, 'RecuperarPass'])->withoutMiddleware('Checkear_Usuario');
+        Route::get('registrar', [UsersController::class, 'registrar']);
+        Route::get('Olvidar-pass', [UsersController::class, 'RecuperarPass']);
         Route::get('detalle/{id}', [UsersController::class, 'DetallesUsuario']);
         Route::get('perfil', [UsersController::class, 'perfil']);
         Route::get('editar', [UsersController::class, 'editar']);
