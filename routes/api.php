@@ -17,16 +17,11 @@ use Illuminate\Support\Facades\Route;
 Route::put('login', [UsersController::class, 'login']);
 Route::get('registrar-auto', [UsersController::class, 'registrarauto']);
 
-Route::middleware('auth-api')->group(function (){
-    Route::prefix('users')->group(function(){
-        Route::get('registrar', [UsersController::class, 'registrar']);
-        Route::get('Olvidar-pass', [UsersController::class, 'RecuperarPass']);
-        Route::get('detalle/{id}', [UsersController::class, 'DetallesUsuario']);
-        Route::get('perfil', [UsersController::class, 'perfil']);
-        Route::get('editar', [UsersController::class, 'editar']);
 
-       //});
-
-
-    });
+Route::prefix('users')->group(function(){
+    Route::middleware(['auth-api', 'auth-role'])->get('registrar', [UsersController::class, 'registrar']);
+    Route::middleware(['auth-api', 'auth-role'])->get('detalle/{id}', [UsersController::class, 'DetallesUsuario']);
+    Route::middleware(['auth-api', 'auth-role'])->get('editar', [UsersController::class, 'editar']);
+    Route::middleware(['auth-api'])->get('perfil', [UsersController::class, 'perfil']);
+    Route::get('Olvidar-pass', [UsersController::class, 'RecuperarPass']);
 });
