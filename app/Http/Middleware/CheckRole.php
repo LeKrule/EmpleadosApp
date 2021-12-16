@@ -18,7 +18,7 @@ class CheckRole
     {
         $usuario = $request->usuario;
         if($usuario) {
-            if($usuario->role == 'directivo' || $usuario->role == 'rrhh') {
+            if($usuario->puesto == 'directivo' || $usuario->puesto == 'rrhh') {
                 return $next($request);
             } else {
                 return response('No puedes acceder', 401);

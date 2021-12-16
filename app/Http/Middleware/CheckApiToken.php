@@ -17,9 +17,14 @@ class CheckApiToken
      */
     public function handle(Request $request, Closure $next)
     {
-        $token = $request->input('api_token');
+        //recoger la info del request (viene del json)
+        $JsonData = $request->getContent();
+        //pasar el Json al objeto
+        $Data = json_decode($JsonData);
+
+        $token = $Data->api_token;
         if($token) {
-            $usuario = User::where('api_token')->first();
+            $usuario = User::where('api_token', $token)->first();
             if($usuario) {
                 $request->usuario = $usuario;
                 return $next($request);

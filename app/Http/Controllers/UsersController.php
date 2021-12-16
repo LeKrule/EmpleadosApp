@@ -60,6 +60,8 @@ class UsersController extends Controller
                 'password' => 'required',
                 'puesto' => 'required|in:directivo,rrhh,empleado',
                 'salario' => 'required',
+                'biografia' => 'required',
+
             ]);
 
             if($validator->fails()){
@@ -67,11 +69,17 @@ class UsersController extends Controller
             } else {
                 $user->nombre = $Data->nombre;
                 $user->email = $Data->email;
-                $user->password = $Data->password;
+                if(preg_match("/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}/", $Data->password)){
+                    $user->password = Hash::make($Data->password);
+                }else{
+                    $respuesta['msg'] = " la contraseña no es segura";
+                    return response()->json($respuesta);
+                }
                 $user->puesto = $Data->puesto;
                 $user->salario = $Data->salario;
+                $user->biografia = $Data->biografia;
                 $user->save();
-                $respuesta['msg'] = " el curso ha sido creado correctamente";
+                $respuesta['msg'] = " el usuario ha sido creado correctamente";
                 $respuesta['status'] = 1;
             }
 
@@ -81,6 +89,7 @@ class UsersController extends Controller
         }
         return response()->json($respuesta);
     }
+
     public function registrarauto(){
 
         try{
@@ -101,5 +110,137 @@ class UsersController extends Controller
         return response()->json($respuesta);
     }
 
+    public function listar (Request $req){
+
+        //recoger la info del request (viene del json)
+        $JsonData = $req->getContent();
+        //pasar el Json al objeto
+        $Data = json_decode($JsonData);
+
+
+        $usuario = $req->usuario;
+
+
+        if($usuario->puesto == 'directivo'){
+            $empleados = User::where('puesto', 'rrhh')->orwhere('puesto', 'empleado')->get();
+            $response['data'] = $empleados;
+        }
+        if($usuario->puesto == 'rrhh'){
+            $empleados = User::where('puesto', 'empleado')->get();
+            $response['data'] = $empleados;
+        }
+
+
+        return response()->json($response);
+
+    }
+    public function consultar (Request $req){
+
+        //recoger la info del request (viene del json)
+        $JsonData = $req->getContent();
+        //pasar el Json al objeto
+        $Data = json_decode($JsonData);
+
+        $usuario = $req->usuario;
+        $user_check = User::where('id',$Data->user_id)->first();
+
+        if($user_check) {
+            if($usuario->puesto == 'directivo'){
+                if($user_check->role != 'directivo') {
+                    $empleados = User::where('id', $Data->user_id)->get();
+                    $empleados->makeVisible("biografia");
+                    $response['data'] = $empleados;
+                } else{
+                    $respuesta['msg'] = "No puedes consultar este usuario";
+                    $respuesta['status'] = 0;
+                }
+            } else if($usuario->puesto == 'rrhh'){
+                if($user_check->role == 'empleado') {
+                    $empleados = User::where('id', $Data->user_id)->get();
+                    $empleados->makeVisible("biografia");
+                    $response['data'] = $empleados;
+                }else{
+                    $respuesta['msg'] = "No puedes consultar este usuario";
+                    $respuesta['status'] = 0;
+                }
+            }
+        } else {
+            $respuesta['msg'] = "El usuario no existe";
+            $respuesta['status'] = 0;
+        }
+
+
+        return response()->json($response);
+
+    }
+    public function Perfil (Request $req){
+
+        //recoger la info del request (viene del json)
+        $JsonData = $req->getContent();
+        //pasar el Json al objeto
+        $Data = json_decode($JsonData);
+
+        $usuario = $req->usuario;
+
+        $usuario->makeVisible('email','biografia','api_token','created_at','updated_at');
+        $response['data'] = $usuario;
+
+        return response()->json($response);
+
+    }
+
+    public function editar (Request $req){
+
+        //recoger la info del request (viene del json)
+        $JsonData = $req->getContent();
+        //pasar el Json al objeto
+        $Data = json_decode($JsonData);
+
+        $usuarioQueEdita = $req->usuario;
+        $usuarioEditado = User::find($Data->user_id);
+
+        switch ($usuarioQueEdita->puesto) {
+            case 'RRHH':
+                $rangoEditor = 2;
+                break;
+            case 'directivo':
+                $rangoEditor = 3;
+                break;
+            default:
+                $respuesta['msg'] = "Puesto no identificado";
+                break;
+        }
+        switch ($usuarioEditado->puesto) {
+            case 'empleado':
+                $rangoEditado = 1;
+                break;
+            case 'RRHH':
+                $rangoEditado = 2;
+                break;
+            case 'directivo':
+                $rangoEditado = 3;
+                break;
+            default:
+                $respuesta['msg'] = "Puesto no identificado";
+                break;
+        }
+
+        if($rangoEditor > $rangoEditado || $usuarioQueEdita->id == $usuarioEditado->id) {
+            if(isset($Data->nombre)) $usuarioEditado->nombre = $Data->nombre;
+            if(isset($Data->email)) $usuarioEditado->email = $Data->email;
+            if(isset($Data->password)) $usuarioEditado->nombre = $Data->password;
+            if(isset($Data->puesto)) $usuarioEditado->puesto = $Data->puesto;
+            $usuarioEditado->save();
+            $response['data'] = $usuarioEditado;
+        }else{
+            $respuesta['msg'] = "No puedes modificar este usuario";
+            $respuesta['status'] = 0;
+        }
+
+
+
+        return response()->json($response);
+
+    }
 
 }
