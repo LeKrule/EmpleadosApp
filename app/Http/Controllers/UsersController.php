@@ -98,7 +98,7 @@ class UsersController extends Controller
         try{
             $user = new User();
             $user->nombre = 'Adrian';
-            $user->email = 'adrian@gmail.com';
+            $user->email = 'adrimedi1998@gmail.com';
             $user->password = Hash::make('password');
             $user->puesto = 'directivo';
             $user->salario = '100000';

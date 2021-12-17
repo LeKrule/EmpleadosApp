@@ -26,5 +26,5 @@ Route::prefix('users')->group(function(){
     Route::middleware(['auth-api', 'auth-role'])->put('perfil', [UsersController::class, 'perfil']);
     Route::middleware(['auth-api', 'auth-role'])->put('editar', [UsersController::class, 'editar']);
     Route::middleware(['auth-api'])->get('perfil', [UsersController::class, 'perfil']);
-    Route::get('Olvidar-pass', [UsersController::class, 'RecuperarPass']);
+    Route::get('PassRecovery', [UsersController::class, 'RecuperarPass']);
 });
