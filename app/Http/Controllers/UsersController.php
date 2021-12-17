@@ -149,7 +149,7 @@ class UsersController extends Controller
 
         if($user_check) {
             if($usuario->puesto == 'directivo'){
-                if($user_check->role != 'directivo') {
+                if($user_check->puesto != 'directivo') {
                     $empleados = User::where('id', $Data->user_id)->get();
                     $empleados->makeVisible("biografia");
                     $response['data'] = $empleados;
@@ -158,12 +158,12 @@ class UsersController extends Controller
                     $response['status'] = 0;
                 }
             } else if($usuario->puesto == 'rrhh'){
-                if($user_check->role == 'empleado') {
+                if($user_check->puesto == 'empleado') {
                     $empleados = User::where('id', $Data->user_id)->get();
                     $empleados->makeVisible("biografia");
                     $response['data'] = $empleados;
                 }else{
-                    $response['msg'] = "No puedes consultar este usuario";
+                    $response['msg'] = "No puedes consultar este usuario.";
                     $response['status'] = 0;
                 }
             }
