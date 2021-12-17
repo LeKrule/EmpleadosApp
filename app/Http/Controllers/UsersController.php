@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PassRecovery;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class UsersController extends Controller
 {
     public function login(Request $req) {
-        $respuesta = ['status'=> 1, 'msg'=>''];
+        $response = ['status'=> 1, 'msg'=>''];
         //recoger la info del request (viene del json)
         $JsonData = $req->getContent();
         //pasar el Json al objeto
@@ -25,25 +28,25 @@ class UsersController extends Controller
                         $token = Hash::make(now());
                         $user->api_token = $token;
                         $user->save();
-                        $respuesta['msg'] = "Sesion iniciada. Token: ".$token;
+                        $response['msg'] = "Sesion iniciada. Token: ".$token;
                     } else {
-                        $respuesta['msg'] = "La contraseña no coincide";
-                        $respuesta['status'] = 0;
+                        $response['msg'] = "La contraseña no coincide";
+                        $response['status'] = 0;
                     }
                 } else {
-                    $respuesta['msg'] = "El usuario introducido no existe";
-                    $respuesta['status'] = 0;
+                    $response['msg'] = "El usuario introducido no existe";
+                    $response['status'] = 0;
                 }
             } else {
-                $respuesta['msg'] = "Debes introducir un email";
-                $respuesta['status'] = 0;
+                $response['msg'] = "Debes introducir un email";
+                $response['status'] = 0;
             }
 
         }catch (\Exception $error){
-            $respuesta['msg'] = "Ha ocurrido un error al añadir el usuario: ".$error->getMessage();
-            $respuesta['status'] = 0;
+            $response['msg'] = "Ha ocurrido un error al añadir el usuario: ".$error->getMessage();
+            $response['status'] = 0;
         }
-        return response()->json($respuesta);
+        return response()->json($response);
     }
 
     public function registrar(Request $req){
@@ -65,29 +68,29 @@ class UsersController extends Controller
             ]);
 
             if($validator->fails()){
-                $respuesta = ['status'=>0, 'msg'=>$validator->errors()->first()];
+                $response = ['status'=>0, 'msg'=>$validator->errors()->first()];
             } else {
                 $user->nombre = $Data->nombre;
                 $user->email = $Data->email;
                 if(preg_match("/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{6,}/", $Data->password)){
                     $user->password = Hash::make($Data->password);
                 }else{
-                    $respuesta['msg'] = " la contraseña no es segura";
-                    return response()->json($respuesta);
+                    $response['msg'] = " la contraseña no es segura";
+                    return response()->json($response);
                 }
                 $user->puesto = $Data->puesto;
                 $user->salario = $Data->salario;
                 $user->biografia = $Data->biografia;
                 $user->save();
-                $respuesta['msg'] = " el usuario ha sido creado correctamente";
-                $respuesta['status'] = 1;
+                $response['msg'] = " el usuario ha sido creado correctamente";
+                $response['status'] = 1;
             }
 
         }catch (\Exception $error){
-            $respuesta['msg'] = "Ha ocurrido un error al añadir el usuario: ".$error->getMessage();
-            $respuesta['status'] = 0;
+            $response['msg'] = "Ha ocurrido un error al añadir el usuario: ".$error->getMessage();
+            $response['status'] = 0;
         }
-        return response()->json($respuesta);
+        return response()->json($response);
     }
 
     public function registrarauto(){
@@ -101,13 +104,13 @@ class UsersController extends Controller
             $user->salario = '100000';
             $user->biografia = 'Hola soy directivo e inutil, 100k';
             $user->save();
-            $respuesta['msg'] = "el usuario se ha creado correctamente";
-            $respuesta['status'] = 1;
+            $response['msg'] = "el usuario se ha creado correctamente";
+            $response['status'] = 1;
         }catch (\Exception $error){
-            $respuesta['msg'] = "Ha ocurrido un error al añadir el usuario: ".$error->getMessage();
-            $respuesta['status'] = 0;
+            $response['msg'] = "Ha ocurrido un error al añadir el usuario: ".$error->getMessage();
+            $response['status'] = 0;
         }
-        return response()->json($respuesta);
+        return response()->json($response);
     }
 
     public function listar (Request $req){
@@ -151,8 +154,8 @@ class UsersController extends Controller
                     $empleados->makeVisible("biografia");
                     $response['data'] = $empleados;
                 } else{
-                    $respuesta['msg'] = "No puedes consultar este usuario";
-                    $respuesta['status'] = 0;
+                    $response['msg'] = "No puedes consultar este usuario";
+                    $response['status'] = 0;
                 }
             } else if($usuario->puesto == 'rrhh'){
                 if($user_check->role == 'empleado') {
@@ -160,13 +163,13 @@ class UsersController extends Controller
                     $empleados->makeVisible("biografia");
                     $response['data'] = $empleados;
                 }else{
-                    $respuesta['msg'] = "No puedes consultar este usuario";
-                    $respuesta['status'] = 0;
+                    $response['msg'] = "No puedes consultar este usuario";
+                    $response['status'] = 0;
                 }
             }
         } else {
-            $respuesta['msg'] = "El usuario no existe";
-            $respuesta['status'] = 0;
+            $response['msg'] = "El usuario no existe";
+            $response['status'] = 0;
         }
 
 
@@ -207,7 +210,7 @@ class UsersController extends Controller
                 $rangoEditor = 3;
                 break;
             default:
-                $respuesta['msg'] = "Puesto no identificado";
+                $response['msg'] = "Puesto no identificado";
                 break;
         }
         switch ($usuarioEditado->puesto) {
@@ -221,25 +224,56 @@ class UsersController extends Controller
                 $rangoEditado = 3;
                 break;
             default:
-                $respuesta['msg'] = "Puesto no identificado";
+                $response['msg'] = "Puesto no identificado";
                 break;
         }
 
         if($rangoEditor > $rangoEditado || $usuarioQueEdita->id == $usuarioEditado->id) {
             if(isset($Data->nombre)) $usuarioEditado->nombre = $Data->nombre;
             if(isset($Data->email)) $usuarioEditado->email = $Data->email;
-            if(isset($Data->password)) $usuarioEditado->nombre = $Data->password;
+            if(isset($Data->password)) $usuarioEditado->password = Hash::make($Data->password);
             if(isset($Data->puesto)) $usuarioEditado->puesto = $Data->puesto;
             $usuarioEditado->save();
             $response['data'] = $usuarioEditado;
         }else{
-            $respuesta['msg'] = "No puedes modificar este usuario";
-            $respuesta['status'] = 0;
+            $response['msg'] = "No puedes modificar este usuario";
+            $response['status'] = 0;
         }
 
 
 
         return response()->json($response);
+
+    }
+
+    public function RecuperarPass(Request $req){
+        //recoger la info del request (viene del json)
+        $JsonData = $req->getContent();
+        //pasar el Json al objeto
+        $Data = json_decode($JsonData);
+
+        $user = User::where('email',$Data->email)->first();
+
+        if($user){
+
+            $NuevaPass = Str::random(20);
+            $user->password = Hash::make($NuevaPass);
+            $user->save();
+            Mail::to($user->mail)->send(new PassRecovery($NuevaPass));
+            $response['msg'] = "Contraseña cambiada correctamente: $NuevaPass";
+            $response['status'] = 1;
+
+        }else{
+            $response['msg'] = "Ctm no se encuentra el email fds kkkkk";
+            $response['status'] = 0;
+        }
+
+        return response()->json($response);
+
+
+
+
+
 
     }
 
