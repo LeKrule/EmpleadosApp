@@ -259,7 +259,7 @@ class UsersController extends Controller
             $NuevaPass = Str::random(20);
             $user->password = Hash::make($NuevaPass);
             $user->save();
-            Mail::to($user->mail)->send(new PassRecovery($NuevaPass));
+            Mail::to($user->email)->send(new PassRecovery($NuevaPass));
             $response['msg'] = "Contraseña cambiada correctamente: $NuevaPass";
             $response['status'] = 1;
 

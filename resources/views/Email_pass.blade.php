@@ -8,7 +8,7 @@
 </head>
 <body>
     <h1>¿Olvidaste tu contraseña?</h1>
-   <p> Tu nueva contraseña es: {{$password}}</p>
+   <p> Tu nueva contraseña es: {{ $password }}</p>
 
 </body>
 </html>
